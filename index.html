@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1E2761">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>UHS Rep Tracker</title>
+<style>
+:root{--navy:#1E2761;--ink:#1A1F36;--slate:#5B6478;--ice:#CADCFC;--gold:#E0A12E;--teal:#2C7A7B;--bg:#F4F6FB;--line:#DBE2F0;--red:#C0392B;--green:#1E8E5A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:84px}
+header{background:var(--navy);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:17px;font-weight:700}
+header .who{font-size:12px;color:var(--ice)}
+main{padding:14px;max-width:560px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(26,31,54,.06)}
+.card h2{font-size:15px;margin-bottom:12px;color:var(--navy)}
+label{display:block;font-size:12px;font-weight:600;color:var(--slate);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#fff}
+textarea{min-height:64px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+button{width:100%;padding:13px;border:0;border-radius:9px;background:var(--navy);color:#fff;font-size:16px;font-weight:700;margin-top:14px}
+button.gold{background:var(--gold);color:var(--ink)}
+button.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}
+button:disabled{opacity:.5}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;color:var(--slate);font-size:11px;font-weight:600;margin:0;padding:9px 0 7px;border-radius:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--navy)}
+nav .ic{font-size:20px;line-height:1}
+.stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.stat:last-child{border:0}
+.stat b{font-size:15px}
+.big{font-size:26px;font-weight:800;color:var(--navy)}
+.pos{color:var(--green)}.neg{color:var(--red)}.gold-t{color:var(--gold)}
+.pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;background:var(--ice);color:var(--navy)}
+.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:9px;font-size:14px;z-index:99;opacity:0;transition:opacity .25s}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+.commbox{background:var(--bg);border:1px dashed var(--gold);border-radius:9px;padding:10px;margin-top:10px;font-size:13px;text-align:center}
+.tile{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center}
+.tile .n{font-size:20px;font-weight:800;color:var(--navy)}
+.tile .l{font-size:10px;color:var(--slate);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tditem{border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:8px;font-size:13px}
+.tditem .row{margin-top:8px}
+.tditem button{margin-top:0;padding:8px;font-size:13px}
+.small{font-size:12px;color:var(--slate)}
+#loginView main{max-width:380px;margin-top:8vh}
+.logo{font-size:24px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:2px}
+.logo span{color:var(--gold)}
+.sub{font-size:12px;color:var(--slate);text-align:center;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView">
+<main>
+  <div class="card">
+    <div class="logo">UHS <span>Rep Tracker</span></div>
+    <div class="sub">Daily numbers · dispositions · nightly report</div>
+    <label>Name</label><input id="liName" autocomplete="username">
+    <label>Password</label><input id="liPw" type="password" autocomplete="current-password">
+    <button onclick="login()">Sign In</button>
+    <div id="liErr" class="small" style="color:var(--red);margin-top:8px;text-align:center"></div>
+  </div>
+</main>
+</div>
+
+<!-- APP -->
+<div id="appView" class="hidden">
+<header><h1 id="hdrTitle">Disposition</h1><div class="who" id="who"></div></header>
+<main>
+
+  <!-- DISPOSITION -->
+  <section id="tab-dispo">
+    <div class="card">
+      <h2>Log an appointment</h2>
+      <div class="row"><div><label>Date</label><input id="dDate" type="date"></div>
+      <div><label>Appt time</label><input id="dTime" type="time"></div></div>
+      <label>Lead name</label><input id="dLead">
+      <div class="row"><div><label>Zip</label><input id="dZip" inputmode="numeric"></div>
+      <div><label>Lead source</label><select id="dSource"><option>Company Lead</option><option>Self-Gen</option><option>Referral</option><option>Canvass</option><option>Other</option></select></div></div>
+      <label>Disposition</label><select id="dDispo" onchange="soldFields()"></select>
+      <div id="soldBlock" class="hidden">
+        <div class="row"><div><label>Package</label><select id="dPkg"></select></div>
+        <div><label>Contract price $</label><input id="dPrice" inputmode="decimal" oninput="commPreview()"></div></div>
+        <label>Discount given: <b id="dDiscLbl">0%</b></label>
+        <input id="dDisc" type="range" min="0" max="15" step="0.5" value="0" oninput="commPreview()">
+        <label>Upcharges sold (notes)</label><input id="dUp" placeholder="seat, frost glass, color walls…">
+        <div class="commbox" id="commBox">Commission: —</div>
+      </div>
+      <label>Notes</label><textarea id="dNotes"></textarea>
+      <button onclick="submitDispo()" id="dBtn">Save Disposition</button>
+    </div>
+  </section>
+
+  <!-- TURNDOWNS / CANCELS -->
+  <section id="tab-td" class="hidden">
+    <div class="card">
+      <h2>Log a bank turndown / cancellation</h2>
+      <label>Type</label><select id="tType"><option>Bank Turndown</option><option>Customer Cancel</option></select>
+      <label>Contract ID (from the sale)</label><input id="tCid" placeholder="C2606…">
+      <div class="row"><div><label>Amount $</label><input id="tAmt" inputmode="decimal"></div>
+      <div><label>Lender (if turndown)</label><input id="tLender"></div></div>
+      <label>Reason</label><input id="tReason">
+      <button onclick="submitTd()">Save</button>
+    </div>
+    <div class="card">
+      <h2>Open turndowns — second look</h2>
+      <div id="tdList" class="small">Loading…</div>
+    </div>
+  </section>
+
+  <!-- NIGHTLY -->
+  <section id="tab-night" class="hidden">
+    <div class="card">
+      <h2>Tonight's numbers <span class="pill" id="nDate"></span></h2>
+      <div class="row" style="margin-bottom:10px">
+        <div class="tile"><div class="n" id="nLeads">0</div><div class="l">Leads run</div></div>
+        <div class="tile"><div class="n" id="nDemos">0</div><div class="l">Demos</div></div>
+        <div class="tile"><div class="n" id="nSales">0</div><div class="l">Sales</div></div>
+      </div>
+      <div class="stat"><span>Gross written</span><b id="nGross">$0</b></div>
+      <div class="stat"><span>Bank turndowns</span><b class="neg" id="nTd">$0</b></div>
+      <div class="stat"><span>Cancellations</span><b class="neg" id="nCan">$0</b></div>
+      <div class="stat"><span>Rescued (2nd look)</span><b class="pos" id="nRes">$0</b></div>
+      <div class="stat"><span><b>NET WRITTEN</b></span><span class="big" id="nNet">$0</span></div>
+      <div class="stat"><span>Commission earned</span><b class="gold-t" id="nComm">$0</b></div>
+      <label>Adjust leads run (if any unlogged)</label><input id="nLeadsIn" inputmode="numeric" placeholder="auto">
+      <label>Notes for the office</label><textarea id="nNotes"></textarea>
+      <button class="gold" onclick="submitNightly()">Submit Nightly Report</button>
+    </div>
+  </section>
+
+  <!-- DASHBOARD (admin) -->
+  <section id="tab-dash" class="hidden">
+    <div class="card">
+      <h2>Team — <span id="dashDate"></span></h2>
+      <div class="row" style="margin-bottom:10px">
+        <div class="tile"><div class="n" id="aNet">$0</div><div class="l">Net written</div></div>
+        <div class="tile"><div class="n" id="aSales">0</div><div class="l">Sales</div></div>
+        <div class="tile"><div class="n" id="aClose">0%</div><div class="l">Close rate</div></div>
+      </div>
+      <div id="dashRows" class="small">Loading…</div>
+    </div>
+    <div class="card">
+      <h2>Manage reps</h2>
+      <label>Name</label><input id="rName">
+      <label>Password</label><input id="rPw">
+      <div class="row">
+        <button class="ghost" onclick="addRep()">Add Rep</button>
+        <button class="ghost" onclick="resetPw()">Reset Password</button>
+      </div>
+      <div id="repList" class="small" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+</main>
+<nav>
+  <button id="nav-dispo" class="on" onclick="show('dispo')"><span class="ic">📋</span>Dispo</button>
+  <button id="nav-td" onclick="show('td')"><span class="ic">🏦</span>Turndowns</button>
+  <button id="nav-night" onclick="show('night')"><span class="ic">🌙</span>Nightly</button>
+  <button id="nav-dash" class="hidden" onclick="show('dash')"><span class="ic">📊</span>Team</button>
+</nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ====== CONFIG — paste your Apps Script Web App URL here before deploying ======
+const DEFAULT_API = "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE";
+const API = localStorage.getItem('uhs_api') || (new URLSearchParams(location.search).get('api')) || DEFAULT_API;
+if (new URLSearchParams(location.search).get('api')) localStorage.setItem('uhs_api', new URLSearchParams(location.search).get('api'));
+
+let TOKEN = localStorage.getItem('uhs_token') || '';
+let ME = JSON.parse(localStorage.getItem('uhs_me') || 'null');
+let META = null;
+
+async function api(action, payload={}) {
+  const body = JSON.stringify(Object.assign({action, token: TOKEN}, payload));
+  const r = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body});
+  const j = await r.json();
+  if (j.authExpired) { logout(); throw new Error('Session expired — sign in again.'); }
+  if (!j.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+function toast(m, ms=2200){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); }
+const $ = id => document.getElementById(id);
+const fmt$ = n => '$' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+
+async function login(){
+  $('liErr').textContent='';
+  try{
+    const j = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'login', name:$('liName').value.trim(), password:$('liPw').value})}).then(r=>r.json());
+    if(!j.ok) { $('liErr').textContent = j.error || 'Login failed'; return; }
+    TOKEN=j.token; ME=j.me;
+    localStorage.setItem('uhs_token',TOKEN); localStorage.setItem('uhs_me',JSON.stringify(ME));
+    boot();
+  }catch(e){ $('liErr').textContent='Cannot reach server. Check connection.'; }
+}
+function logout(){ TOKEN=''; ME=null; localStorage.removeItem('uhs_token'); localStorage.removeItem('uhs_me');
+  $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); }
+
+async function boot(){
+  $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden');
+  $('who').textContent = ME.name + ' · tap to sign out';
+  $('who').onclick = logout;
+  if (ME.role === 'admin') $('nav-dash').classList.remove('hidden');
+  try { META = await api('meta'); } catch(e){ toast(e.message); return; }
+  $('dDispo').innerHTML = META.dispositions.map(d=>`<option>${d}</option>`).join('');
+  $('dPkg').innerHTML = META.packages.map(p=>`<option>${p}</option>`).join('');
+  $('dDate').value = new Date().toISOString().slice(0,10);
+  soldFields();
+}
+
+function show(t){
+  ['dispo','td','night','dash'].forEach(k=>{
+    $('tab-'+k).classList.toggle('hidden', k!==t);
+    $('nav-'+k).classList.toggle('on', k===t);
+  });
+  $('hdrTitle').textContent = {dispo:'Disposition', td:'Turndowns & Cancels', night:'Nightly Report', dash:'Team Dashboard'}[t];
+  if (t==='night') loadNight();
+  if (t==='td') loadTds();
+  if (t==='dash') loadDash();
+}
+
+function soldFields(){ $('soldBlock').classList.toggle('hidden', $('dDispo').value !== 'Sold'); commPreview(); }
+function commPreview(){
+  const disc = Number($('dDisc').value); $('dDiscLbl').textContent = disc + '%';
+  const p = Number($('dPrice').value)||0;
+  const rate = disc<=0 ? .10 : disc<=7.5 ? .075 : .05;
+  const full = p>0 ? p/(1-disc/100)*.10 : 0;
+  const comm = p*rate;
+  $('commBox').innerHTML = p>0
+    ? `Commission (${(rate*100).toFixed(1)}%): <b>${fmt$(comm)}</b>` + (disc>0?` <span class="neg">— holding price would pay ${fmt$(full)}</span>`:' 💪 full rate')
+    : 'Commission: —';
+}
+
+async function submitDispo(){
+  $('dBtn').disabled = true;
+  try{
+    const j = await api('submitDisposition', {data:{
+      date:$('dDate').value, apptTime:$('dTime').value, leadName:$('dLead').value, zip:$('dZip').value,
+      leadSource:$('dSource').value, disposition:$('dDispo').value, package:$('dPkg').value,
+      contractPrice:$('dPrice').value, discountPct:$('dDisc').value, upcharges:$('dUp').value, notes:$('dNotes').value }});
+    toast(j.contractId ? `Saved ✓ Contract ${j.contractId} · ${fmt$(j.commission)} commission` : 'Saved ✓', 3000);
+    ['dLead','dZip','dPrice','dUp','dNotes','dTime'].forEach(i=>$(i).value='');
+    $('dDisc').value=0; commPreview();
+  }catch(e){ toast(e.message); }
+  $('dBtn').disabled = false;
+}
+
+async function submitTd(){
+  try{
+    await api('submitTurndown', {data:{type:$('tType').value, contractId:$('tCid').value, amount:$('tAmt').value, lender:$('tLender').value, reason:$('tReason').value}});
+    toast('Saved ✓'); ['tCid','tAmt','tLender','tReason'].forEach(i=>$(i).value='');
+    loadTds();
+  }catch(e){ toast(e.message); }
+}
+async function loadTds(){
+  try{
+    const j = await api('openTurndowns');
+    $('tdList').innerHTML = j.items.length ? j.items.map(t=>`
+      <div class="tditem"><b>${t.contractId}</b> · ${t.type} · ${fmt$(t.amount)} ${t.lender?('· '+t.lender):''}<br>
+      <span class="small">${t.rep} · ${t.dateLogged}</span>
+      <div class="row"><button class="ghost" onclick="resolveTd('${t.contractId}','Rescued')">Rescued ✓</button>
+      <button class="ghost" onclick="resolveTd('${t.contractId}','Dead')">Dead ✗</button></div></div>`).join('')
+      : 'No open turndowns.';
+  }catch(e){ $('tdList').textContent = e.message; }
+}
+async function resolveTd(cid, status){
+  try{ await api('resolveTurndown', {contractId:cid, status}); toast(status==='Rescued'?'Rescued — added back to net ✓':'Marked dead'); loadTds(); }
+  catch(e){ toast(e.message); }
+}
+
+async function loadNight(){
+  $('nDate').textContent = new Date().toISOString().slice(0,10);
+  try{
+    const j = await api('myDay');
+    const t = j.totals;
+    $('nLeads').textContent=t.leadsRun; $('nDemos').textContent=t.demos; $('nSales').textContent=t.sales;
+    $('nGross').textContent=fmt$(t.gross); $('nTd').textContent='−'+fmt$(t.turndowns);
+    $('nCan').textContent='−'+fmt$(t.cancels); $('nRes').textContent='+'+fmt$(t.rescued);
+    $('nNet').textContent=fmt$(t.net); $('nComm').textContent=fmt$(t.commission);
+  }catch(e){ toast(e.message); }
+}
+async function submitNightly(){
+  try{
+    const payload = {data:{notes:$('nNotes').value}};
+    if ($('nLeadsIn').value) payload.data.leadsRun = $('nLeadsIn').value;
+    await api('submitNightly', payload);
+    toast('Nightly report submitted ✓ Good work today.', 3000);
+    $('nNotes').value=''; $('nLeadsIn').value='';
+  }catch(e){ toast(e.message); }
+}
+
+async function loadDash(){
+  $('dashDate').textContent = new Date().toISOString().slice(0,10);
+  try{
+    const j = await api('dashboard');
+    const a = j.totals;
+    $('aNet').textContent = fmt$(a.net); $('aSales').textContent = a.sales;
+    $('aClose').textContent = a.leadsRun ? Math.round(a.sales/a.leadsRun*100)+'%' : '0%';
+    $('dashRows').innerHTML = j.team.map(r=>`
+      <div class="stat"><span><b>${r.rep}</b> · ${r.leadsRun} leads · ${r.sales} sold</span>
+      <span>${fmt$(r.net)} net · <span class="gold-t">${fmt$(r.commission)}</span></span></div>`).join('') || 'No activity.';
+    const reps = await api('listReps');
+    $('repList').innerHTML = reps.reps.map(r=>`<div class="stat"><span>${r.name} <span class="pill">${r.role}</span></span><span>${r.active?'active':'inactive'}</span></div>`).join('');
+  }catch(e){ toast(e.message); }
+}
+async function addRep(){
+  try{ await api('addRep', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Rep added ✓'); loadDash(); }
+  catch(e){ toast(e.message); }
+}
+async function resetPw(){
+  try{ await api('setPassword', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Password reset ✓'); }
+  catch(e){ toast(e.message); }
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if (TOKEN && ME) boot();
+</script>
+</body>
+</html>
