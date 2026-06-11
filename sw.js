@@ -1,6 +1,6 @@
 // UHS Rep Tracker — minimal service worker.
 // Caches the app shell for fast loads; API calls (POST) always go to network.
-const CACHE = 'uhs-tracker-v3';
+const CACHE = 'uhs-tracker-v4';
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
