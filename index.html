@@ -64,6 +64,13 @@ nav .ic{font-size:20px;line-height:1}
     <label>Password</label><input id="liPw" type="password" autocomplete="current-password">
     <button onclick="login()">Sign In</button>
     <div id="liErr" class="small" style="color:var(--red);margin-top:8px;text-align:center"></div>
+    <div class="small" style="text-align:center;margin-top:12px"><a href="#" onclick="document.getElementById('bsBlock').classList.toggle('hidden');return false" style="color:var(--slate)">First-time admin setup</a></div>
+    <div id="bsBlock" class="hidden">
+      <label>Admin PIN (from Script Properties)</label><input id="bsPin" inputmode="numeric">
+      <label>Your name</label><input id="bsName">
+      <label>Choose a password</label><input id="bsPw" type="password" autocomplete="new-password">
+      <button class="ghost" onclick="bootstrapAdmin()">Create Admin Account</button>
+    </div>
   </div>
 </main>
 </div>
@@ -170,7 +177,7 @@ nav .ic{font-size:20px;line-height:1}
 
 <script>
 // ====== CONFIG — paste your Apps Script Web App URL here before deploying ======
-const DEFAULT_API = "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE";
+const DEFAULT_API = "https://script.google.com/a/macros/unlimitedhomeservices.org/s/AKfycbyqHDNZAsO-Q1lwLK8nW3qOPRMog8O2ixYx1ic4mPV7emVOjzeLrsm5PeGbUiUyGVkSQA/exec";
 const API = localStorage.getItem('uhs_api') || (new URLSearchParams(location.search).get('api')) || DEFAULT_API;
 if (new URLSearchParams(location.search).get('api')) localStorage.setItem('uhs_api', new URLSearchParams(location.search).get('api'));
 
@@ -203,6 +210,18 @@ async function login(){
 }
 function logout(){ TOKEN=''; ME=null; localStorage.removeItem('uhs_token'); localStorage.removeItem('uhs_me');
   $('appView').classList.add('hidden'); $('loginView').classList.remove('hidden'); }
+
+async function bootstrapAdmin(){
+  $('liErr').textContent='';
+  try{
+    const j = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'bootstrap', pin:$('bsPin').value.trim(), name:$('bsName').value.trim(), password:$('bsPw').value})}).then(r=>r.json());
+    if(!j.ok){ $('liErr').textContent = j.error==='bad pin' ? 'Wrong admin PIN' : (j.error||'Setup failed'); return; }
+    TOKEN=j.token; ME=j.me;
+    localStorage.setItem('uhs_token',TOKEN); localStorage.setItem('uhs_me',JSON.stringify(ME));
+    boot();
+  }catch(e){ $('liErr').textContent='Cannot reach server. Is the web app deployed with access: Anyone?'; }
+}
 
 async function boot(){
   $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden');
