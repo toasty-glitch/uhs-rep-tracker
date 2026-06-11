@@ -327,15 +327,36 @@ async function loadDash(){
       <div class="stat"><span><b>${r.rep}</b> · ${r.leadsRun} leads · ${r.sales} sold</span>
       <span>${fmt$(r.net)} net · <span class="gold-t">${fmt$(r.commission)}</span></span></div>`).join('') || 'No activity.';
     const reps = await api('listReps');
-    $('repList').innerHTML = reps.reps.map(r=>`<div class="stat"><span>${r.name} <span class="pill">${r.role}</span></span><span>${r.active?'active':'inactive'}</span></div>`).join('');
+    $('repList').innerHTML = reps.reps.map(r=>`
+      <div class="tditem"><b>${r.name}</b> <span class="pill">${r.role}</span> ${r.active?'':'<span class="neg">· inactive</span>'}
+      <div class="row">
+        <button class="ghost" onclick="renameRep('${r.name.replace(/'/g,"\\'")}')">✏️ Rename</button>
+        <button class="ghost" onclick="toggleRep('${r.name.replace(/'/g,"\\'")}',${!r.active})">${r.active?'⏸ Deactivate':'▶️ Activate'}</button>
+        <button class="ghost" onclick="removeRep('${r.name.replace(/'/g,"\\'")}')">🗑 Remove</button>
+      </div></div>`).join('') || 'No reps yet.';
   }catch(e){ toast(e.message); }
 }
 async function addRep(){
-  try{ await api('addRep', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Rep added ✓'); loadDash(); }
+  try{ await api('addRep', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Rep added ✓'); $('rName').value='';$('rPw').value=''; loadDash(); }
   catch(e){ toast(e.message); }
 }
 async function resetPw(){
-  try{ await api('setPassword', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Password reset ✓'); }
+  try{ await api('setPassword', {name:$('rName').value.trim(), password:$('rPw').value}); toast('Password reset ✓'); $('rPw').value=''; }
+  catch(e){ toast(e.message); }
+}
+async function renameRep(name){
+  const newName = prompt(`Rename "${name}" to:`, name);
+  if (!newName || newName === name) return;
+  try{ await api('renameRep', {name, newName: newName.trim()}); toast('Renamed ✓ (history updated)'); loadDash(); }
+  catch(e){ toast(e.message); }
+}
+async function toggleRep(name, active){
+  try{ await api('setActive', {name, active}); toast(active?'Activated ✓':'Deactivated ✓'); loadDash(); }
+  catch(e){ toast(e.message); }
+}
+async function removeRep(name){
+  if (!confirm(`Remove "${name}"? Their history rows stay in the Sheet, but they can no longer sign in. (Deactivate is usually enough.)`)) return;
+  try{ await api('removeRep', {name}); toast('Removed ✓'); loadDash(); }
   catch(e){ toast(e.message); }
 }
 
